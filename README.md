@@ -17,7 +17,7 @@ This repository contains a developed suspended sediment concentration (SSC) mode
 
 To ensure our code and data adhere to **FAIR** principles—making them Findable, Accessible, Interoperable, and Reusable—we are sharing them in this repository.
 
-Users with access to the repository can add it to the Code Editor using:
+Anyone with GEE account can add the repository to the their Code Editor using:
 
 https://code.earthengine.google.com/?accept_repo=users/Water_Delineation/SSC_app
 
