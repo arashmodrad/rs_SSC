@@ -14,7 +14,22 @@
 ## Repository
 
 This repository contains a developed suspended sediment concentration (SSC) model developed for north-western US that uses Landsat and Sentinel to estimate SSC. It also contains Laboratory experiments conducted to estimate SSC in contained environment that initiated the model development for north-western US.
-  
+
+To ensure our code and data adhere to **FAIR** principles—making them Findable, Accessible, Interoperable, and Reusable—we are sharing them in this repository.
+
+Users with access to the repository can add it to the Code Editor using:
+
+https://code.earthengine.google.com/?accept_repo=users/Water_Delineation/SSC_app
+
+The data can be separately through the following links:
+
+https://code.earthengine.google.com/?asset=projects/arash-modaresi-rad/assets/SSC_gee
+
+https://code.earthengine.google.com/?asset=projects/ee-earth-arash/assets/cb_2018_us_state_20m
+
+https://code.earthengine.google.com/?asset=users/Water_Delineation/ssc_aoi
+
+
 ### Cloning
 
 ```shell

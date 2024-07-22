@@ -1,6 +1,7 @@
 //__________________________________________Initialize_____________________________________________//
 //Map.addLayer(table, {color: 'FF0000'}, 'Imported Shapefile', false);
 Map.setCenter(-118.296, 45.084, 6);
+// Map.setCenter(-116.79345626808299, 45.855631514122116, 15);
 // var aoi = states.filter(ee.Filter.inList('NAME', ['Idaho', 'Oregon','Washington']));
 var empty_image = ee.Image().byte();
 // Export.table.toAsset({
@@ -33,12 +34,12 @@ var gsw = harmonizer_obj.gsw;
 // var gsw = harmonizer_obj.watch;
 
 var harmonizer_obj = require('users/Water_Delineation/SSC_app:Harmonizer')
-                                  .init('2019-03-10', '2019-04-10', Chosen_Geometry);
+                                  .init('2019-03-10', '2019-03-20', Chosen_Geometry);
 var harmonized_image = harmonizer_obj.merged_dataset;
 // var model_obj = require('users/Water_Delineation/SSC_app:ProcessDev')
 //                         .init(harmonized_image, vis_opt, Chosen_Geometry);
 // var hd = harmonized_dataset;
-// // print(harmonized_dataset.limit(3));    
+  
 var visualization = {
     bands: ['RED', 'GREEN', 'BLUE'],
     min: 0.0,
@@ -76,8 +77,13 @@ var mapPanel = ui.Map();
 
 // //__________________________________________Panel_____________________________________________//
 
-var label_O = ui.Label('SSC monitoring App', {fontSize: '50px', fontWeight: 'bold', whiteSpace: 'pre'});
+var label_O = ui.Label('Suspended sediment', {fontSize: '50px', fontWeight: 'bold', whiteSpace: 'pre'});
 vis_panel.add(label_O);
+var label_O = ui.Label('concentration (SSC)', {fontSize: '50px', fontWeight: 'bold', whiteSpace: 'pre'});
+vis_panel.add(label_O);
+var label_O = ui.Label('monitoring App', {fontSize: '50px', fontWeight: 'bold', whiteSpace: 'pre'});
+vis_panel.add(label_O);
+
 var tilte = ui.Label('\n____________________ OPTIONAL ____________________\n', {fontWeight: 'bold', whiteSpace: 'pre'});
 vis_panel.add(tilte);
 var clable = ui.Label('\nOverlay water map (optional)', {fontWeight: 'bold', whiteSpace: 'pre'}); 
@@ -146,61 +152,156 @@ vis_panel.add(tilte_end);
 var label2_O = ui.Label('\nDraw a ploygon:', {fontWeight: 'bold', whiteSpace: 'pre'});
 vis_panel.add(label2_O);
 var text = ui.Label(
-    'Draw a polygon using the bottom bellow this text to identify the region of interest for sediment evaluation, For computational limitations consider selecting an small area i.e., zooming to 1km scale on the map ',
+    'Use the drawing tool (Select “AOI”) to define the region of interest for assessing SSC. Due to computational constraints, focus on a small area..',
     {fontSize: '15px'});
 vis_panel.add(text);
 var checkbox_GS = ui.Checkbox({label: 'Select "AOI" layer and draw (Step 1)', style: {fontWeight: 'bold'}});
-checkbox_GS.onChange(function(checked) {
-                var drawing_tools = Map.drawingTools();
-                // drawing_tools.setShown(false);
-                // while (drawing_tools.layers().length() > 0) {
-                //   var layer = drawing_tools.layers().get(0);
-                //   drawing_tools.layers().remove(layer);
-                // }
-                var null_geometry =
-                    ui.Map.GeometryLayer({geometries: null, name: 'geometry', color: 'red'});
-                
-                drawing_tools.layers().add(null_geometry);
-                drawing_tools.setLinked(false);
-                drawing_tools.setDrawModes(['polygon']);
-                drawing_tools.addLayer([], 'AOI', 'red').setShown(checked);
-                drawing_tools.setShape('polygon');
-                drawing_tools.draw();
-                
-                var getPolygon = ui.util.debounce(function() {
-                  Chosen_Geometry = drawing_tools.layers().get(0).toGeometry();
-                  var local_aoi = drawing_tools.layers().get(0).getEeObject();
-                  // print(local_aoi);
-                  var local_aoi_fc = ee.FeatureCollection(local_aoi);
-                  var empty = ee.Image().byte();
-                  var outline = empty.paint({
-                    featureCollection: local_aoi_fc,
-                    color: 1,
-                    width: 3
-                  });
-                  Map.addLayer(outline, {palette: 'red'}, 'AOI');
-                  var local_layers = drawing_tools.layers();
-                  local_layers.get(0).geometries().remove(local_layers.get(0).geometries().get(0));
-                  
-                }, 100);
-                
-                drawing_tools.onDraw(getPolygon);
-                
-                var undraw = ui.util.debounce(function() {
-                  drawing_tools.setShape(null);
-                }, 200);
-                
-                drawing_tools.onDraw(undraw);
-                
-});
-vis_panel.add(checkbox_GS);
+// Define a global variable to store Chosen_Geometry
+var globalChosenGeometry = null;
 
+// checkbox_GS.onChange(function(checked) {
+//                 var drawing_tools = Map.drawingTools();
+//                 // drawing_tools.setShown(false);
+//                 // while (drawing_tools.layers().length() > 0) {
+//                 //   var layer = drawing_tools.layers().get(0);
+//                 //   drawing_tools.layers().remove(layer);
+//                 // }
+//                 var null_geometry =
+//                     ui.Map.GeometryLayer({geometries: null, name: 'geometry', color: 'red'});
+                
+//                 drawing_tools.layers().add(null_geometry);
+//                 drawing_tools.setLinked(false);
+//                 drawing_tools.setDrawModes(['polygon']);
+//                 drawing_tools.addLayer([], 'AOI', 'red').setShown(checked);
+//                 drawing_tools.setShape('polygon');
+//                 drawing_tools.draw();
+                
+//                 // var getPolygon = ui.util.debounce(function() {
+//                 //   var Chosen_Geometry = drawing_tools.layers().get(0).toGeometry();
+                  
+//                 //   var local_aoi = drawing_tools.layers().get(0).getEeObject();
+//                 //   // print(local_aoi);
+//                 //   var local_aoi_fc = ee.FeatureCollection(local_aoi);
+//                 //   var empty = ee.Image().byte();
+//                 //   var outline = empty.paint({
+//                 //     featureCollection: local_aoi_fc,
+//                 //     color: 1,
+//                 //     width: 3
+//                 //   });
+//                 //   Map.addLayer(outline, {palette: 'red'}, 'AOI');
+//                 //   var local_layers = drawing_tools.layers();
+//                 //   local_layers.get(0).geometries().remove(local_layers.get(0).geometries().get(0));
+                  
+//                 // }, 100);
+//                 // print('Chosen_Geometry checkbox_GS', Chosen_Geometry)
+//                 function calculateGeometryAndCallback(callback) {
+//                   var Chosen_Geometry = drawing_tools.layers().get(0).toGeometry();
+                  
+//                   var local_aoi = drawing_tools.layers().get(0).getEeObject();
+//                   var local_aoi_fc = ee.FeatureCollection(local_aoi);
+//                   var empty = ee.Image().byte();
+//                   var outline = empty.paint({
+//                     featureCollection: local_aoi_fc,
+//                     color: 1,
+//                     width: 3
+//                   });
+//                   Map.addLayer(outline, {palette: 'red'}, 'AOI');
+                  
+//                   var local_layers = drawing_tools.layers();
+//                   local_layers.get(0).geometries().remove(local_layers.get(0).geometries().get(0));
+                  
+//                   // Store Chosen_Geometry in the global variable
+//                   globalChosenGeometry = Chosen_Geometry;
+//                   // globalChosenGeometry.setValue(Chosen_Geometry);
+//                   // Invoke the callback with the calculated Chosen_Geometry
+//                   //callback(Chosen_Geometry);
+//                 }
+                
+//                 // Create a debounced function that calls the function with the callback
+//                 var getPolygon = ui.util.debounce(function(callback) {
+//                   calculateGeometryAndCallback(callback);
+//                 }, 100);
+                
+//                 // Define a function to handle Chosen_Geometry after it's calculated
+//                 function handleChosenGeometry(chosenGeometry) {
+//                   print('Chosen_Geometry checkbox_GS', chosenGeometry);
+//                   // Use chosenGeometry or globalChosenGeometry wherever needed
+//                   // For example:
+//                   // Do something with chosenGeometry or globalChosenGeometry
+//                 }
+                                
+//                 getPolygon(handleChosenGeometry);
+                
+//                 // ............................
+                
+//                 drawing_tools.onDraw(getPolygon);
+                
+//                 var undraw = ui.util.debounce(function() {
+//                   drawing_tools.setShape(null);
+//                 }, 200);
+                
+//                 drawing_tools.onDraw(undraw);
+//                 print('Chosen_Geometry', globalChosenGeometry);
+                
+                
+// });
+// vis_panel.add(checkbox_GS);
+checkbox_GS.onChange(function(checked) {
+  function removeAllLayers() {
+    var layers = Map.layers();
+    
+    layers.forEach(function(layer) {
+      Map.layers().remove(layer);
+    });
+  }
+  
+  // Call the function to remove all layers
+  removeAllLayers();
+  var drawing_tools = Map.drawingTools();
+  var null_geometry = ui.Map.GeometryLayer({ geometries: null, name: 'geometry', color: 'red' });
+
+  drawing_tools.layers().add(null_geometry);
+  drawing_tools.setLinked(false);
+  drawing_tools.setDrawModes(['polygon']);
+  drawing_tools.addLayer([], 'AOI', 'red').setShown(false);
+  drawing_tools.setShape('polygon');
+  drawing_tools.draw();
+
+  function calculateGeometryAndCallback() {
+    var Chosen_Geometry = drawing_tools.layers().get(0).toGeometry();
+    var local_aoi = drawing_tools.layers().get(0).getEeObject();
+    var local_aoi_fc = ee.FeatureCollection(local_aoi);
+    var empty = ee.Image().byte();
+    var outline = empty.paint({
+      featureCollection: local_aoi_fc,
+      color: 1,
+      width: 3
+    });
+    Map.addLayer(outline, { palette: 'red' }, 'AOI');
+
+    // Update globalChosenGeometry directly
+    globalChosenGeometry = Chosen_Geometry;
+  }
+  var local_layers = drawing_tools.layers();
+  local_layers.get(0).geometries().remove(local_layers.get(0).geometries().get(0));
+  drawing_tools.onDraw(ui.util.debounce(calculateGeometryAndCallback, 100));
+
+  var undraw = ui.util.debounce(function() {
+    drawing_tools.setShape(null);
+  }, 200);
+
+  drawing_tools.onDraw(undraw);
+  // Hide the drawn geometry from the map display
+  
+});
+
+vis_panel.add(checkbox_GS);
 
 
 var clable = ui.Label('\nType in start date (Step 2)', {fontWeight: 'bold', whiteSpace: 'pre'}); 
 vis_panel.add(clable);
 var text = ui.Label(
-    'This collects all Landsat and Sentienel Harmonized images for this period and takes the mean',
+    'This collects all Harmonized Landsat and Sentinel images for the selected period, and takes the mean reflectance for each pixel across all images.',
     {fontSize: '15px'});
 vis_panel.add(text);
 var start_date = ui.Textbox({placeholder:'YYYY-MM-DD', value:'2017-05-01',
@@ -218,21 +319,79 @@ vis_panel.add(end_date);
 // print(start_date.get('value'));
 // applyButton: ui.Button('Apply filters', app.applyFilters),
 var text3 = ui.Label(
-    'Note that downloading the image will open a new tab and cant take while to complete',
+    'Downloading the image will open a new tab and can take a while to complete.',
     {fontSize: '15px'});
 vis_panel.add(text3);    
 
+
+function updateSSC() {
+  // Map.centerObject(Chosen_Geometry, 13);
+  var harmonizer_obj = require('users/Water_Delineation/SSC_app:Harmonizer')
+    .init(start_date.get('value'), end_date.get('value'), globalChosenGeometry);
+  
+  var harmonized_image = ee.ImageCollection(harmonizer_obj.merged_dataset).mean();
+  var collectionSize = harmonized_image.bandNames().size();
+  var errorOccurred = false;
+  // if (collectionSize.getInfo() === 0) {
+  //   errorOccurred = true;
+  // }
+  
+// if(errorOccurred) {
+//     // var inspector_panel = ui.Panel([ui.Label('No images in selected period, restart the app')]);
+//     // inspector_panel.style().set({position: 'middle-right', fontSize: '200px', color: '#FF0000',
+//     //                               fontWeight: 'bold'});
+//     // Map.add(inspector_panel);
+    
+//     // var texterror = ui.Label(
+//     //   'No images in selected period, restart the app',
+//     //   { fontSize: '15px' }
+//     // );
+//     // vis_panel.add(texterror);
+//   } else {
+//     if(layer_opt) {                   
+//       Map.addLayer(harmonized_image, visualization, 'Harmonized_Image');
+//     }
+//   }
+  var model_obj= require('users/Water_Delineation/SSC_app:ProcessDev')
+                    .init(harmonized_image, vis_opt, Chosen_Geometry);
+  
+                                
+  return {harmonized_image: harmonized_image, model_obj: model_obj, errorOccurred: errorOccurred};                           
+                          
+}
+
 var Button_GV_O = ui.Button({label: 'Run SSC (Step 4)', 
                               onClick: function() {
-                                // Map.centerObject(Chosen_Geometry, 13);
-                                var harmonizer_obj = require('users/Water_Delineation/SSC_app:Harmonizer')
-                                  .init(start_date.get('value'), end_date.get('value'), Chosen_Geometry);
-                                var harmonized_image = ee.ImageCollection(harmonizer_obj.merged_dataset).mean();
+                              
+                              var obj = updateSSC();
+                              var model_obj = obj.model_obj;
+                              var errorOccurred = obj.errorOccurred;
+                              var harmonized_image = obj.harmonized_image;
+                              var regression = model_obj.regression;
+                              // print('iamge info',regression.getInfo())
+                              // var error = regression.error();
+                              // Try adding the layer, catch any potential errors
+                              if (errorOccurred) {
+                                var inspector_panel = ui.Panel([ui.Label('No images in selected period, restart the app')]);
+                                inspector_panel.style().set({position: 'middle-right', fontSize: '200px', color: '#FF0000',
+                                                              fontWeight: 'bold'});
+                                Map.add(inspector_panel);
+                              } else {
+                                // Add the layer to the map
+                                var viz = {palette: model_obj.palette, min: model_obj.min_vis, max: model_obj.max_vis};
                                 Map.addLayer(harmonized_image, visualization, 'Harmonized_Image');
-                                var model_obj= require('users/Water_Delineation/SSC_app:ProcessDev')
-                                                  .init(harmonized_image, vis_opt, Chosen_Geometry);
+                                Map.addLayer(regression, viz, 'SSC');
+                              }
+                              
+                              
+                             
+                              var drawingTools = Map.drawingTools();
+                                while (drawingTools.layers().length() > 0) {
+                                  var layer = drawingTools.layers().get(0);
+                                  drawingTools.layers().remove(layer);
+                                }
                                 var ssc_image = ee.Image(model_obj.regression).select('predicted');
-                                var palette = model_obj.vis;
+                                var palette = model_obj.palette;
                                 // var min_vis = 0;//model_obj.min_vis;
                                 // var max_vis = 300;//model_obj.max_vis;
                                 // print(palette, 'palette');
@@ -330,16 +489,18 @@ var Button_GV_O = ui.Button({label: 'Run SSC (Step 4)',
                                   
                                   var click_point = ee.Geometry.Point(coords.lon, coords.lat);
                                   var demValue = ssc_image.reduceRegion(ee.Reducer.first(), click_point, 30).evaluate(function(val){
-                                    var demText = 'SSC at POI (mg/l): ' + ee.Number(val.predicted).int().getInfo();
-                                    inspector_panel.widgets().set(2, ui.Label({value: 
-                                       demText}));
+                                    var demText = (val.predicted !== null) ? 'SSC at POI (mg/l): ' + ee.Number(val.predicted).int().getInfo() : null;
+                                    inspector_panel.widgets().set(2, ui.Label({value: demText}));
+                                    // Remove the 'Processing...' label after displaying demText
+                                    inspector_panel.widgets().set(0, ui.Label({value: null}));
                                   });
+                               
                                   inspector_panel.widgets().set(1, ui.Label({value: 'Long: ' 
                                        + coords.lon 
                                        + '  '
                                        + ' Lat: '+ coords.lat}));
                                 });
-
+                              
                                 // Define a function to generate a download URL of the image for the
                                 // viewport region. 
                                 function downloadImg() {
@@ -362,35 +523,93 @@ var Button_GV_O = ui.Button({label: 'Run SSC (Step 4)',
                                 // vis_panel.add(urlLabel);
                                 var panel = ui.Panel([downloadButton, urlLabel]);
                                 Map.add(panel);
-                                },
-                                
-                                style: {stretch: 'horizontal',
-                                       fontSize: '20px',
-                                       fontWeight: 'bold',
-                                },
+                                // style: {stretch: 'horizontal',
+                                //       fontSize: '20px',
+                                //       fontWeight: 'bold',
+                                // }
+                              }
                                 
 });
 vis_panel.add(Button_GV_O);
+start_date.onChange(updateSSC());
+end_date.onChange(updateSSC);
+checkbox_GS.onChange(updateSSC);
+// function updateGlobalChosenGeometry(newGeometry) {
+//   globalChosenGeometry = newGeometry;
+//   updateSSC(); // Call updateSSC when the globalChosenGeometry changes
+// }
 
-var text = ui.Label(
-    '\nTo check another location click the reset botton and startover by selecting AOI form Geometry Imports and draw\n',
+var text1 = ui.Label(
+    '\nTo check another location or different time click the reset button and start over.\n',
     {fontSize: '15px'});
-vis_panel.add(text);
+vis_panel.add(text1);
 
-var Button_r = ui.Button({label: 'Reset APP (Step 5)', 
-                              onClick: function() {
-                                Map.clear();
-                                ui.root.clear();
-                                ui.root.add(oldMap);
-                                ui.root.add(oldApp);
-                                Map.addLayer(outline, {palette: 'FF0000'}, 'Boundary');
-                              },
-                              style: {stretch: 'horizontal',
-                                       color: '#FF0000',
-                                       fontSize: '20px',
-                                       fontWeight: 'bold'
-                              }
+
+
+
+var text1 = ui.Label(
+    '\nIf the selected time period does not include an image, you will notice a red bar within the layers section (top right on the map), signifying an unsuccessful attempt.\n',
+    {fontSize: '15px'});
+vis_panel.add(text1);
+var text2 = ui.Label(
+    '\nPlease disregard the "Geometry Imports" panel as it is managed automatically by the application.\n',
+    {fontSize: '15px'});
+vis_panel.add(text2);
+
+var Button_r = ui.Button({
+  label: 'Reset APP (Step 5)',
+  onClick: function() {
+    // Clearing UI elements but not resetting globalChosenGeometry
+    Map.clear();
+    ui.root.clear();
+    ui.root.add(oldMap);
+    ui.root.add(oldApp);
+    function removeAllLayers() {
+      var layers = Map.layers();
+      var count = layers.length();
+      
+      for (var i = 0; i < count; i++) {
+        Map.layers().get(0).remove(); // Remove the first layer in each iteration
+      }
+    }
+    
+    // Call the function to remove all layers
+    removeAllLayers();
+    Map.addLayer(outline, { palette: 'FF0000' }, 'Boundary');
+    var storedCenter = Map.getCenter();
+    var storedZoom = Map.getZoom();
+    Map.setCenter(
+      storedCenter.coordinates().get(0).getInfo(),
+      storedCenter.coordinates().get(1).getInfo(),
+      storedZoom
+    );
+  },
+  style: {
+    stretch: 'horizontal',
+    color: '#FF0000',
+    fontSize: '20px',
+    fontWeight: 'bold'
+  }
 });
+
+// var Button_r = ui.Button({label: 'Reset APP (Step 5)', 
+//                               onClick: function() {
+//                                 Map.clear();
+//                                 ui.root.clear();
+//                                 ui.root.add(oldMap);
+//                                 ui.root.add(oldApp);
+//                                 Map.addLayer(outline, {palette: 'FF0000'}, 'Boundary');
+//                                 var storedCenter = Map.getCenter();
+//                                 var storedZoom = Map.getZoom();
+//                                 Map.setCenter(storedCenter.coordinates().get(0).getInfo(), storedCenter.coordinates().get(1).getInfo(), storedZoom);
+//                               },
+//                               style: {stretch: 'horizontal',
+//                                       color: '#FF0000',
+//                                       fontSize: '20px',
+//                                       fontWeight: 'bold'
+//                               }
+// });
+
 
 vis_panel.add(Button_r);
 
